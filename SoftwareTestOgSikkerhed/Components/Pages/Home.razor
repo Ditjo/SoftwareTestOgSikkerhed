@@ -3,9 +3,22 @@
 @using Microsoft.AspNetCore.Identity;
 
 @inject IServiceProvider _serviceProvider;
-@* @inject UserManager<Data.ApplicationUser> UserManager; *@
-
+ @* @inject UserManager<Data.ApplicationUser> UserManager; *@
+     @inject AuthenticationStateProvider _authenticationStateProvider;
 <PageTitle>Home</PageTitle>
+
+@* @if (_isAuthenticated)
+{
+    <p>You are logged in!</p>
+    if (_isAdmin)
+    {
+        <p>You are Admin</p>
+    }
+}
+else
+{
+    <p>You are NOT logged in!</p>
+} *@
 
 <AuthorizeView>
     <Authorized>
@@ -22,11 +35,20 @@
 </AuthorizeView>
 
 @code{
+    private bool _isAuthenticated;
+    private bool _isAdmin;
 
-    // protected override async Task OnInitializedAsync()
-    // {
-    //     // await CreateUserRolesAsync("mads.ditjo@gmail.com", "Admin");
-    // }
+    public bool IsAuthenticated => _isAuthenticated;
+    public bool IsAdmin => _isAdmin;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // await CreateUserRolesAsync("mads.ditjo@gmail.com", "Admin");
+        var authenticationState = await _authenticationStateProvider.GetAuthenticationStateAsync();
+        var authUser = authenticationState.User;
+        _isAuthenticated = authUser.Identity.IsAuthenticated;
+        _isAdmin = authUser.IsInRole("Admin");
+    }
 
 
     // public async Task CreateUserRolesAsync(string user, string role)
