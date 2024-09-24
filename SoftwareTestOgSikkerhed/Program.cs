@@ -4,6 +4,10 @@ using Microsoft.EntityFrameworkCore;
 using SoftwareTestOgSikkerhed.Components;
 using SoftwareTestOgSikkerhed.Components.Account;
 using SoftwareTestOgSikkerhed.Data;
+using SoftwareTestOgSikkerhed.Interfaces;
+using SoftwareTestOgSikkerhed.Models;
+using SoftwareTestOgSikkerhed.Repositories;
+using System.Security.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,9 +27,17 @@ builder.Services.AddAuthentication(options =>
     })
     .AddIdentityCookies();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+builder.Services.AddScoped<ICRUD<Cpr>, CprRepository>();
+builder.Services.AddScoped<ICRUD<Todolist>, TodolistRepository>();
+
+var identityConnectionString = builder.Configuration.GetConnectionString("IdentityConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(identityConnectionString));
+
+var TodoConnectionString = builder.Configuration.GetConnectionString("TodoConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+builder.Services.AddDbContext<Dbcontext>(options =>
+	options.UseSqlServer(TodoConnectionString));
+
 
 //var mockConnectionString = builder.Configuration.GetConnectionString("MockConnection") ?? throw new InvalidOperationException("Connection string 'MockConnection' not found.");
 //builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -65,8 +77,25 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Password.RequiredUniqueChars = 1;
 });
 
+builder.WebHost.UseKestrel((context, serverOptions) => {
+	serverOptions.Configure(context.Configuration.GetSection("Kestrel"))
+	.Endpoint("HTTPS", listenOptions => { listenOptions.HttpsOptions.SslProtocols = SslProtocols.Tls13; });
+});
+
+string userFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+userFolder = Path.Combine(userFolder, ".aspnet");
+userFolder = Path.Combine(userFolder, "https");
+userFolder = Path.Combine(userFolder, "Mads.pfx");
+builder.Configuration.GetSection("Kestrel:Endpoints:Https:Certificate:Path").Value = userFolder;
+
+string kestrelPassword = builder.Configuration.GetValue<string>("KestrelPassword");
+builder.Configuration.GetSection("Kestrel:Endpoints:Https:Certificate:Password").Value = kestrelPassword;
 
 var app = builder.Build();
+
+// CORS Policy - so 2 processes can talk to each other
+//app.UseCors(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

@@ -1,5 +1,7 @@
 ﻿@page "/"
+@attribute [Authorize(Policy = "AuthenticatedUser")]
 
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity;
 
 @inject IServiceProvider _serviceProvider;
