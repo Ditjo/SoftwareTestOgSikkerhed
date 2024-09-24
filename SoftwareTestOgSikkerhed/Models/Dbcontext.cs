@@ -9,7 +9,7 @@ namespace SoftwareTestOgSikkerhed.Models
 			// if I want a direct access to db, I write it here (like Program.cs)
 		}
 
-		DbSet<Cpr> Cprs { get; set; }
-		DbSet<Todolist> Todolist { get; set; }
+		public DbSet<Cpr> Cpr { get; set; }
+		public DbSet<Todolist> Todolist { get; set; }
 	}
 }
