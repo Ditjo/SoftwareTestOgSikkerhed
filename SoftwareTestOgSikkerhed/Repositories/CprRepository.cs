@@ -1,31 +1,62 @@
-﻿using SoftwareTestOgSikkerhed.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using SoftwareTestOgSikkerhed.Interfaces;
 using SoftwareTestOgSikkerhed.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace SoftwareTestOgSikkerhed.Repositories
 {
 	public class CprRepository : ICRUD<Cpr>
 	{
-		public Task<Cpr> Create(Cpr model)
+		Dbcontext context;
+
+        public CprRepository(Dbcontext dbcontext)
+        {
+			context = dbcontext;
+        }
+
+		public Task AddTodoItemToCpr(Cpr cpr, Todolist todoItem)
 		{
-			throw new NotImplementedException();
+			//throw new NotImplementedException();
+			if (cpr.Todolist == null)
+			{
+				cpr.Todolist = new List<Todolist>();
+			}
+
+			cpr.Todolist.Add(todoItem);
+			context.SaveChangesAsync();
+			return Task.CompletedTask;
 		}
 
-		public Task<Cpr> Delete(int id)
+        public async Task<Cpr> Create(Cpr model)
 		{
-			throw new NotImplementedException();
+			context.Cpr.Add(model);
+			await context.SaveChangesAsync();
+			return model;
 		}
 
-		public Task<List<Cpr>> GetAll()
+		public async Task<Cpr> Delete(int id)
 		{
-			throw new NotImplementedException();
+			Cpr cpr = await GetById(id);
+			if (cpr != null)
+			{
+				context.Remove(cpr);
+				await context.SaveChangesAsync();
+			}
+			return cpr;
 		}
 
-		public Task<Cpr> GetById(int id)
+		public async Task<List<Cpr>> GetAll()
 		{
-			throw new NotImplementedException();
+			return await context.Cpr.Include(x => x.Todolist)
+				.ToListAsync();
 		}
 
-		public Task<Cpr?> Update(Cpr model)
+		public async Task<Cpr> GetById(int id)
+		{
+			return await context.Cpr.FirstAsync(x => x.Id == id);
+		}
+
+		public async Task<Cpr?> Update(Cpr model)
 		{
 			throw new NotImplementedException();
 		}

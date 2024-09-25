@@ -3,72 +3,179 @@
 
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity;
+@using SoftwareTestOgSikkerhed.Codes
+@using SoftwareTestOgSikkerhed.Models
+@using SoftwareTestOgSikkerhed.Repositories
 
 @inject IServiceProvider _serviceProvider;
+@inject CprRepository _cprRepo;
+@inject TodolistRepository _todoRepo;
+@inject HashingService _hashinngService;
+@inject SymetricEncryptionService _symetricEncryptionService;
+@inject AsymetricEncryptionService _asymetricEncryptionService;
  @* @inject UserManager<Data.ApplicationUser> UserManager; *@
      @inject AuthenticationStateProvider _authenticationStateProvider;
 <PageTitle>Home</PageTitle>
 
-@* @if (_isAuthenticated)
+@if (IsCprNumberNotGiven)
 {
-    <p>You are logged in!</p>
-    if (_isAdmin)
-    {
-        <p>You are Admin</p>
-    }
+	<p>No Cpr</p>
+	<input @bind="_cprNumber" @oninput="OnInput" type="number" placeholder="xxxxxx-xxxx" />
+	<button @onclick="OnSubmitCprNumber" disabled="@(_cprNumber?.Length != 10)">Submit</button>
+	if (_isErrorMessageVisable)
+	{
+		<p>Cpr-nr er forkert!</p>
+	}
 }
 else
 {
-    <p>You are NOT logged in!</p>
-} *@
+	<h3>Task List</h3>
+	<input @bind="_taskinput" type="text" placeholder="Todo title" />
+	<button @onclick="AddTaskToList">Add Task</button>
+	<h4>List of Task:</h4>
+		
+		<table>
+			<tr>
+				<th>Task Info</th>
+			</tr>
+			@foreach (var item in user.Todolist)
+			{
+			<tr>
+				<td>@_asymetricEncryptionService.AsymetricDecrypt(@item.TodoTitle)</td>
+			</tr>
+			}
+		</table>
+	
+}
 
-<AuthorizeView>
-    <Authorized>
-        <p>You are logged in!</p>
-    </Authorized>
-    <NotAuthorized>
-        <p>You are NOT logged in!</p>
-    </NotAuthorized>
-</AuthorizeView>
-<AuthorizeView Roles="Admin">
-    <Authorized>
-        <p>You are Admin</p>
-    </Authorized>
-</AuthorizeView>
-
-@code{
-    private bool _isAuthenticated;
-    private bool _isAdmin;
-
-    public bool IsAuthenticated => _isAuthenticated;
-    public bool IsAdmin => _isAdmin;
-
-    protected override async Task OnInitializedAsync()
-    {
-        // await CreateUserRolesAsync("mads.ditjo@gmail.com", "Admin");
-        var authenticationState = await _authenticationStateProvider.GetAuthenticationStateAsync();
-        var authUser = authenticationState.User;
-        _isAuthenticated = authUser.Identity.IsAuthenticated;
-        _isAdmin = authUser.IsInRole("Admin");
-    }
+@code {
+	private bool _isAuthenticated;
+	private bool _isAdmin;
+	public bool IsAuthenticated => _isAuthenticated;
+	public bool IsAdmin => _isAdmin;
 
 
-    // public async Task CreateUserRolesAsync(string user, string role)
-    // {
-    //     var roleManager = _serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    //     var userManager = UserManager;
+	private bool IsCprNumberNotGiven = true;
+	private bool _isErrorMessageVisable = false;
 
-    //     var userRoleCheck = await roleManager.RoleExistsAsync(role);
-    //     if (!userRoleCheck)
-    //     {
-    //         await roleManager.CreateAsync(new IdentityRole(role));
-    //     }
+	private string _cprNumber;
+	private string _username = "";
+	private string _taskinput;
 
-    //     Data.ApplicationUser identityUser = await userManager.FindByEmailAsync(user);
+	private Cpr user = null;
+	private List<Cpr> cprList;
 
-    //     if(identityUser is not null)
-    //     {
-    //         await userManager.AddToRoleAsync(identityUser, role);
-    //     }
-    // }
+	protected override async Task OnInitializedAsync()
+	{
+		// await CreateUserRolesAsync("mads.ditjo@gmail.com", "Admin");
+		var authenticationState = await _authenticationStateProvider.GetAuthenticationStateAsync();
+		var authUser = authenticationState.User;
+		_isAuthenticated = authUser.Identity.IsAuthenticated;
+		_isAdmin = authUser.IsInRole("Admin");
+
+		_username = authUser.Identity.Name;
+
+		await LoadData();
+
+		//Search to try and find a user
+		cprList.ForEach(x =>
+		{
+			if (_username.Equals(x.UserName))
+			{
+				user = x;
+			}
+		});
+
+		//Hash Test
+		// string textToHash = "Mads";
+		// string hash = _hashinngService.BCryptHashing(textToHash);
+		// bool b = _hashinngService.VerifyBCryptHashing(textToHash, hash);
+
+
+		// string textEncrypted = _symetricEncryptionService.Protect(textToHash);
+		// string textUnencrypted = _symetricEncryptionService.UnProtect(textEncrypted);
+
+		// string textEncrypted = await _asymetricEncryptionService.AsymetricEncrypt(textToHash);
+		// string textUnencrypted = _asymetricEncryptionService.AsymetricDecrypt(textEncrypted);
+	}
+
+	private async Task LoadData()
+	{
+		cprList = await _cprRepo.GetAll();
+	}
+
+	private async Task OnSubmitCprNumber()
+	{
+		if (user is null)
+		{
+			var cpr = await FirstTimeSetup();
+			user = cpr;
+		}
+
+		if (_hashinngService.VerifyBCryptHashing(_cprNumber, user.CprNumber))
+		{
+			//If Cpr is True
+			_isErrorMessageVisable = false;
+			IsCprNumberNotGiven = false;
+		}
+		else
+		{
+			//If Cpr is False show Error msg
+			_isErrorMessageVisable = true;
+		}
+
+	}
+
+	private async Task<Cpr> FirstTimeSetup()
+	{
+		var hashedCpr = _hashinngService.BCryptHashing(_cprNumber);
+		Cpr cpr = new()
+			{
+				UserName = _username,
+				CprNumber = hashedCpr,
+				Todolist = new List<Todolist>()
+			};
+		var cprWithId = await _cprRepo.Create(cpr);
+		return cprWithId;
+
+	}
+
+	private void OnInput(ChangeEventArgs e)
+	{
+		_cprNumber = e.Value.ToString();
+	}
+
+	private async void AddTaskToList()
+	{
+		string encryptedTaskInput = await _asymetricEncryptionService.AsymetricEncrypt(_taskinput);
+
+		Todolist todo = new Todolist()
+			{
+				TodoTitle = encryptedTaskInput
+			};
+
+		await _cprRepo.AddTodoItemToCpr(user, todo);
+
+		_taskinput = null;
+		await LoadData();
+	}
+
+	// public async Task CreateUserRolesAsync(string user, string role)
+	// {
+	//     var roleManager = _serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+	//     var userManager = UserManager;
+
+	//     var userRoleCheck = await roleManager.RoleExistsAsync(role);
+	//     if (!userRoleCheck)
+	//     {
+	//         await roleManager.CreateAsync(new IdentityRole(role));
+	//     }
+
+	//     Data.ApplicationUser identityUser = await userManager.FindByEmailAsync(user);
+
+	//     if(identityUser is not null)
+	//     {
+	//         await userManager.AddToRoleAsync(identityUser, role);
+	//     }
+		// }
 }

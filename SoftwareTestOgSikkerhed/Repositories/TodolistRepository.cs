@@ -1,31 +1,47 @@
-﻿using SoftwareTestOgSikkerhed.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using SoftwareTestOgSikkerhed.Interfaces;
 using SoftwareTestOgSikkerhed.Models;
 
 namespace SoftwareTestOgSikkerhed.Repositories
 {
 	public class TodolistRepository : ICRUD<Todolist>
 	{
-		public Task<Todolist> Create(Todolist model)
+		Dbcontext context;
+
+		public TodolistRepository(Dbcontext dbcontext)
 		{
-			throw new NotImplementedException();
+			context = dbcontext;
 		}
 
-		public Task<Todolist> Delete(int id)
+		public async Task<Todolist> Create(Todolist model)
 		{
-			throw new NotImplementedException();
+			context.Todolist.Add(model);
+			await context.SaveChangesAsync();
+			return model;
 		}
 
-		public Task<List<Todolist>> GetAll()
+		public async Task<Todolist> Delete(int id)
 		{
-			throw new NotImplementedException();
+			Todolist todo = await GetById(id);
+			if (todo != null)
+			{
+				context.Remove(todo);
+				await context.SaveChangesAsync();
+			}
+			return todo;
 		}
 
-		public Task<Todolist> GetById(int id)
+		public async Task<List<Todolist>> GetAll()
 		{
-			throw new NotImplementedException();
+			return await context.Todolist.ToListAsync();
 		}
 
-		public Task<Todolist?> Update(Todolist model)
+		public async Task<Todolist> GetById(int id)
+		{
+			return await context.Todolist.FirstAsync(x => x.Id == id);
+		}
+
+		public async Task<Todolist?> Update(Todolist model)
 		{
 			throw new NotImplementedException();
 		}

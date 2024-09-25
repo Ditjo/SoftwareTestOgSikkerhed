@@ -7,7 +7,7 @@ namespace SoftwareTestOgSikkerhed.Models
         [Key] 
         public int Id { get; set; }
         public string? UserName { get; set; }
-        public string? CprId {  get; set; }
+        public string? CprNumber {  get; set; }
         public List<Todolist>? Todolist { get; set; }
 
     }

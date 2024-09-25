@@ -1,4 +1,6 @@
-﻿namespace SoftwareTestOgSikkerhed.Interfaces
+﻿using SoftwareTestOgSikkerhed.Models;
+
+namespace SoftwareTestOgSikkerhed.Interfaces
 {
 	public interface ICRUD<T>
 	{

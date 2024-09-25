@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using SoftwareTestOgSikkerhed.Codes;
 using SoftwareTestOgSikkerhed.Components;
 using SoftwareTestOgSikkerhed.Components.Account;
 using SoftwareTestOgSikkerhed.Data;
@@ -19,6 +20,11 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+builder.Services.AddScoped<TodolistRepository>();
+builder.Services.AddScoped<CprRepository>();
+builder.Services.AddSingleton<HashingService>();
+builder.Services.AddSingleton<SymetricEncryptionService>();
+builder.Services.AddSingleton<AsymetricEncryptionService>();
 
 builder.Services.AddAuthentication(options =>
     {
@@ -90,6 +96,9 @@ builder.Configuration.GetSection("Kestrel:Endpoints:Https:Certificate:Path").Val
 
 string kestrelPassword = builder.Configuration.GetValue<string>("KestrelPassword");
 builder.Configuration.GetSection("Kestrel:Endpoints:Https:Certificate:Password").Value = kestrelPassword;
+
+builder.Services.AddDataProtection();
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
