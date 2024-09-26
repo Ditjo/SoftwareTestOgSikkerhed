@@ -85,18 +85,6 @@ else
 				user = x;
 			}
 		});
-
-		//Hash Test
-		// string textToHash = "Mads";
-		// string hash = _hashinngService.BCryptHashing(textToHash);
-		// bool b = _hashinngService.VerifyBCryptHashing(textToHash, hash);
-
-
-		// string textEncrypted = _symetricEncryptionService.Protect(textToHash);
-		// string textUnencrypted = _symetricEncryptionService.UnProtect(textEncrypted);
-
-		// string textEncrypted = await _asymetricEncryptionService.AsymetricEncrypt(textToHash);
-		// string textUnencrypted = _asymetricEncryptionService.AsymetricDecrypt(textEncrypted);
 	}
 
 	private async Task LoadData()
@@ -123,7 +111,6 @@ else
 			//If Cpr is False show Error msg
 			_isErrorMessageVisable = true;
 		}
-
 	}
 
 	private async Task<Cpr> FirstTimeSetup()
@@ -153,7 +140,7 @@ else
 			{
 				TodoTitle = encryptedTaskInput
 			};
-
+			
 		await _cprRepo.AddTodoItemToCpr(user, todo);
 
 		_taskinput = null;

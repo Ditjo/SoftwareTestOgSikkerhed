@@ -14,7 +14,7 @@ namespace SoftwareTestOgSikkerhed.Repositories
 			context = dbcontext;
         }
 
-		public Task AddTodoItemToCpr(Cpr cpr, Todolist todoItem)
+		public async Task AddTodoItemToCpr(Cpr cpr, Todolist todoItem)
 		{
 			//throw new NotImplementedException();
 			if (cpr.Todolist == null)
@@ -23,8 +23,8 @@ namespace SoftwareTestOgSikkerhed.Repositories
 			}
 
 			cpr.Todolist.Add(todoItem);
-			context.SaveChangesAsync();
-			return Task.CompletedTask;
+			await context.SaveChangesAsync();
+			return;
 		}
 
         public async Task<Cpr> Create(Cpr model)
